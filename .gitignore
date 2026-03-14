@@ -1,0 +1,4 @@
+node_modules
+clawmarket.db
+.env
+*.log

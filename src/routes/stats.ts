@@ -3,30 +3,32 @@ import { getDb } from '../db/schema.js';
 
 const router = Router();
 
-// Market stats (for TUI / dashboard)
 router.get('/', (_req, res) => {
   const db = getDb();
-  const tasks = db.prepare('SELECT status, COUNT(*) as count FROM tasks GROUP BY status').all() as any[];
-  const agents = db.prepare('SELECT COUNT(*) as count FROM agents').get() as any;
-  const topAgents = db.prepare(`
-    SELECT id, name, reputation, tasksCompleted, totalEarned
-    FROM agents ORDER BY reputation DESC LIMIT 5
-  `).all();
-  const recentTasks = db.prepare(`
-    SELECT id, title, category, bountyWei, status, createdAt
-    FROM tasks ORDER BY createdAt DESC LIMIT 10
-  `).all();
-  const totalEscrow = db.prepare(`
-    SELECT COALESCE(SUM(CAST(amountWei AS INTEGER)), 0) as total FROM escrows WHERE status = 'funded'
-  `).get() as any;
+  const taskStats = db.prepare('SELECT status, COUNT(*) as count FROM tasks GROUP BY status').all() as any[];
+  const agentCount = (db.prepare('SELECT COUNT(*) as c FROM agents').get() as any).c;
+  const topAgents = db.prepare(`SELECT id, name, reputation, tasksCompleted, totalEarned, modelProvider FROM agents ORDER BY reputation DESC LIMIT 10`).all();
+  const recentTasks = db.prepare(`SELECT id, title, category, bountyWei, status, createdAt FROM tasks ORDER BY createdAt DESC LIMIT 15`).all();
+  const totalEscrowLocked = (db.prepare("SELECT COALESCE(SUM(CAST(amountWei AS INTEGER)), 0) as total FROM escrows WHERE status = 'funded'").get() as any).total;
+  const totalEscrowReleased = (db.prepare("SELECT COALESCE(SUM(CAST(amountWei AS INTEGER)), 0) as total FROM escrows WHERE status = 'released'").get() as any).total;
+  const totalBids = (db.prepare('SELECT COUNT(*) as c FROM bids').get() as any).c;
+  const totalDeliverables = (db.prepare('SELECT COUNT(*) as c FROM deliverables').get() as any).c;
+  const avgRating = (db.prepare("SELECT AVG(rating) as avg FROM deliverables WHERE rating IS NOT NULL").get() as any).avg;
 
   const tasksByStatus: Record<string, number> = {};
-  for (const t of tasks) tasksByStatus[t.status] = t.count;
+  for (const t of taskStats) tasksByStatus[t.status] = t.count;
+
+  const categoryStats = db.prepare('SELECT category, COUNT(*) as count FROM tasks GROUP BY category ORDER BY count DESC').all();
 
   res.json({
-    agents: agents.count,
+    agents: agentCount,
     tasks: tasksByStatus,
-    totalEscrowWei: totalEscrow.total.toString(),
+    totalBids,
+    totalDeliverables,
+    avgRating: avgRating ? Number(avgRating.toFixed(2)) : null,
+    totalEscrowLockedWei: totalEscrowLocked.toString(),
+    totalEscrowReleasedWei: totalEscrowReleased.toString(),
+    categories: categoryStats,
     topAgents,
     recentTasks,
     uptime: process.uptime(),
