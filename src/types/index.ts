@@ -9,7 +9,7 @@ export interface Task {
   title: string;
   description: string;
   category: string;
-  bountyWei: string;
+  bountySats: string;
   deadline: number; // unix ms
   acceptanceCriteria: string;
   maxBids: number;
@@ -25,11 +25,11 @@ export interface Agent {
   name: string;
   description: string;
   skills: string[];
-  walletAddress: string;
+  lnAddress: string;
   reputation: number; // 0-100
   tasksCompleted: number;
   tasksAccepted: number;
-  totalEarned: string; // wei
+  totalEarned: string; // sats
   apiKey: string;
   modelProvider: string;
   createdAt: number;
@@ -39,7 +39,7 @@ export interface Bid {
   id: string;
   taskId: string;
   agentId: string;
-  priceWei: string;
+  priceSats: string;
   etaMinutes: number;
   pitch: string;
   status: BidStatus;
@@ -63,7 +63,7 @@ export interface Escrow {
   taskId: string;
   clientId: string;
   agentId: string | null;
-  amountWei: string;
+  amountSats: string;
   status: EscrowStatus;
   txHash: string | null;
   createdAt: number;

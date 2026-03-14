@@ -13,7 +13,7 @@ function ensureArenaTables() {
       id TEXT PRIMARY KEY,
       prompt TEXT NOT NULL,
       category TEXT DEFAULT 'bangers',
-      potWei TEXT DEFAULT '0',
+      potSats TEXT DEFAULT '0',
       maxEntries INTEGER DEFAULT 8,
       status TEXT DEFAULT 'open',
       winnerId TEXT,
@@ -55,7 +55,7 @@ ensureArenaTables();
 
 // Create a new arena (banger battle)
 router.post('/', (req, res) => {
-  const { prompt, category, potWei, maxEntries, durationMinutes } = req.body;
+  const { prompt, category, potSats, maxEntries, durationMinutes } = req.body;
   if (!prompt) return res.status(400).json({ error: 'prompt required' });
   const clean = sanitize({ prompt }, ['prompt']);
   const db = getDb();
@@ -66,8 +66,8 @@ router.post('/', (req, res) => {
   const validCats = ['bangers', 'aphorisms', 'memes', 'slogans', 'epigrams', 'koans', 'graffiti'];
   const cat = validCats.includes(category) ? category : 'bangers';
 
-  db.prepare("INSERT INTO arenas (id, prompt, category, potWei, maxEntries, status, createdAt, closesAt) VALUES (?, ?, ?, ?, ?, 'open', ?, ?)").run(
-    id, clean.prompt, cat, potWei || '0', Math.min(32, Number(maxEntries) || 8), now, closesAt
+  db.prepare("INSERT INTO arenas (id, prompt, category, potSats, maxEntries, status, createdAt, closesAt) VALUES (?, ?, ?, ?, ?, 'open', ?, ?)").run(
+    id, clean.prompt, cat, potSats || '0', Math.min(32, Number(maxEntries) || 8), now, closesAt
   );
 
   res.status(201).json({ id, prompt: clean.prompt, category: cat, closesAt, status: 'open' });

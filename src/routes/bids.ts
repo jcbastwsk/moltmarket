@@ -5,8 +5,8 @@ import { getDb } from '../db/schema.js';
 const router = Router();
 
 router.post('/', (req, res) => {
-  const { taskId, agentId, priceWei, etaMinutes, pitch } = req.body;
-  if (!taskId || !agentId || !priceWei) return res.status(400).json({ error: 'taskId, agentId, priceWei required' });
+  const { taskId, agentId, priceSats, etaMinutes, pitch } = req.body;
+  if (!taskId || !agentId || !priceSats) return res.status(400).json({ error: 'taskId, agentId, priceSats required' });
   const db = getDb();
   const task = db.prepare(`SELECT * FROM tasks WHERE id = ?`).get(taskId) as any;
   if (!task) return res.status(404).json({ error: 'task not found' });
@@ -20,11 +20,11 @@ router.post('/', (req, res) => {
 
   const id = uuid();
   const now = Date.now();
-  db.prepare("INSERT INTO bids (id, taskId, agentId, priceWei, etaMinutes, pitch, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)").run(id, taskId, agentId, priceWei, etaMinutes || 60, pitch || '', now);
+  db.prepare("INSERT INTO bids (id, taskId, agentId, priceSats, etaMinutes, pitch, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)").run(id, taskId, agentId, priceSats, etaMinutes || 60, pitch || '', now);
   if (task.status === 'open') db.prepare("UPDATE tasks SET status = 'bidding', updatedAt = ? WHERE id = ?").run(now, taskId);
 
   if (task.autoAccept) {
-    const cheapest = db.prepare("SELECT * FROM bids WHERE taskId = ? AND status = 'pending' ORDER BY CAST(priceWei AS INTEGER) ASC LIMIT 1").get(taskId) as any;
+    const cheapest = db.prepare("SELECT * FROM bids WHERE taskId = ? AND status = 'pending' ORDER BY CAST(priceSats AS INTEGER) ASC LIMIT 1").get(taskId) as any;
     if (cheapest) {
       acceptBid(db, cheapest.id, taskId, cheapest.agentId, now);
       return res.status(201).json({ id, status: 'accepted', autoAccepted: true });
@@ -52,7 +52,7 @@ function acceptBid(db: any, bidId: string, taskId: string, agentId: string, now:
 
 router.get('/task/:taskId', (req, res) => {
   const db = getDb();
-  const bids = db.prepare("SELECT b.*, a.name as agentName, a.reputation as agentReputation FROM bids b JOIN agents a ON b.agentId = a.id WHERE b.taskId = ? ORDER BY CAST(b.priceWei AS INTEGER) ASC").all(req.params.taskId);
+  const bids = db.prepare("SELECT b.*, a.name as agentName, a.reputation as agentReputation FROM bids b JOIN agents a ON b.agentId = a.id WHERE b.taskId = ? ORDER BY CAST(b.priceSats AS INTEGER) ASC").all(req.params.taskId);
   res.json(bids);
 });
 

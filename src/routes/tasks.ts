@@ -10,9 +10,9 @@ const router = Router();
 
 // Create a task
 router.post('/', (req, res) => {
-  const { clientId, title, description, bountyWei } = req.body;
-  if (!clientId || !title || !description || !bountyWei) {
-    return res.status(400).json({ error: 'clientId, title, description, bountyWei required' });
+  const { clientId, title, description, bountySats } = req.body;
+  if (!clientId || !title || !description || !bountySats) {
+    return res.status(400).json({ error: 'clientId, title, description, bountySats required' });
   }
   if (title.length > 200) return res.status(400).json({ error: 'title too long (max 200)' });
 
@@ -24,14 +24,14 @@ router.post('/', (req, res) => {
   const deadline = Number(req.body.deadline) || now + 86400000;
   const maxBids = Math.min(50, Math.max(1, Number(req.body.maxBids) || 10));
 
-  db.prepare("INSERT INTO tasks (id, clientId, title, description, category, bountyWei, deadline, acceptanceCriteria, maxBids, autoAccept, status, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?)").run(
-    id, clientId, clean.title, clean.description, category, bountyWei, deadline, clean.acceptanceCriteria || '', maxBids, req.body.autoAccept ? 1 : 0, now, now
+  db.prepare("INSERT INTO tasks (id, clientId, title, description, category, bountySats, deadline, acceptanceCriteria, maxBids, autoAccept, status, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?)").run(
+    id, clientId, clean.title, clean.description, category, bountySats, deadline, clean.acceptanceCriteria || '', maxBids, req.body.autoAccept ? 1 : 0, now, now
   );
 
   const escrowId = uuid();
-  db.prepare("INSERT INTO escrows (id, taskId, clientId, amountWei, status, createdAt) VALUES (?, ?, ?, ?, 'funded', ?)").run(escrowId, id, clientId, bountyWei, now);
+  db.prepare("INSERT INTO escrows (id, taskId, clientId, amountSats, status, createdAt) VALUES (?, ?, ?, ?, 'funded', ?)").run(escrowId, id, clientId, bountySats, now);
 
-  res.status(201).json({ id, escrowId, title: clean.title, status: 'open', category, bountyWei });
+  res.status(201).json({ id, escrowId, title: clean.title, status: 'open', category, bountySats });
 });
 
 // List tasks with filters and pagination
@@ -65,7 +65,7 @@ router.get('/', (req, res) => {
     params.push(like, like); countParams.push(like, like);
   }
 
-  const sortField = sort === 'bounty' ? 'CAST(bountyWei AS INTEGER) DESC' : sort === 'deadline' ? 'deadline ASC' : 'createdAt DESC';
+  const sortField = sort === 'bounty' ? 'CAST(bountySats AS INTEGER) DESC' : sort === 'deadline' ? 'deadline ASC' : 'createdAt DESC';
   sql += ` ORDER BY ${sortField} LIMIT ? OFFSET ?`;
   params.push(limit, offset);
 
@@ -81,7 +81,7 @@ router.get('/:id', (req, res) => {
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id) as any;
   if (!task) return res.status(404).json({ error: 'task not found' });
 
-  const bids = db.prepare("SELECT b.*, a.name as agentName, a.reputation as agentReputation FROM bids b JOIN agents a ON b.agentId = a.id WHERE b.taskId = ? ORDER BY CAST(b.priceWei AS INTEGER) ASC").all(req.params.id);
+  const bids = db.prepare("SELECT b.*, a.name as agentName, a.reputation as agentReputation FROM bids b JOIN agents a ON b.agentId = a.id WHERE b.taskId = ? ORDER BY CAST(b.priceSats AS INTEGER) ASC").all(req.params.id);
   const deliverables = db.prepare('SELECT * FROM deliverables WHERE taskId = ? ORDER BY createdAt DESC').all(req.params.id);
   const escrow = db.prepare('SELECT * FROM escrows WHERE taskId = ?').get(req.params.id);
 

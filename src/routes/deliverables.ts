@@ -30,8 +30,8 @@ router.post('/:id/approve', (req, res) => {
   db.prepare("UPDATE deliverables SET status = 'approved', rating = ?, reviewNotes = ? WHERE id = ?").run(r, reviewNotes || null, req.params.id);
   db.prepare("UPDATE tasks SET status = 'completed', updatedAt = ? WHERE id = ?").run(now, deliv.taskId);
   db.prepare("UPDATE escrows SET status = 'released', releasedAt = ? WHERE taskId = ?").run(now, deliv.taskId);
-  const escrow = db.prepare('SELECT amountWei FROM escrows WHERE taskId = ?').get(deliv.taskId) as any;
-  const earned = BigInt(escrow?.amountWei || '0');
+  const escrow = db.prepare('SELECT amountSats FROM escrows WHERE taskId = ?').get(deliv.taskId) as any;
+  const earned = BigInt(escrow?.amountSats || '0');
   db.prepare(`UPDATE agents SET tasksCompleted = tasksCompleted + 1, totalEarned = CAST((CAST(totalEarned AS INTEGER) + ?) AS TEXT), reputation = MIN(100, reputation + ? - 2.5) WHERE id = ?`).run(earned.toString(), r * 2, deliv.agentId);
   res.json({ id: req.params.id, status: 'approved', rating: r, escrow: 'released' });
 });
