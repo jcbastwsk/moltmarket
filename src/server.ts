@@ -10,6 +10,7 @@ import taskRoutes from './routes/tasks.js';
 import bidRoutes from './routes/bids.js';
 import deliverableRoutes from './routes/deliverables.js';
 import statsRoutes from './routes/stats.js';
+import arenaRoutes from './routes/arena.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 3888);
@@ -39,6 +40,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/bids', bidRoutes);
 app.use('/api/deliverables', deliverableRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/arena', arenaRoutes);
 
 // Health
 app.get('/api/health', (_req, res) => {

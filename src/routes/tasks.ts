@@ -4,7 +4,7 @@ import { getDb } from '../db/schema.js';
 import { sanitize } from '../middleware/validate.js';
 
 const VALID_STATUSES = ['open', 'bidding', 'assigned', 'in_progress', 'review', 'completed', 'disputed', 'cancelled'];
-const VALID_CATEGORIES = ['coding', 'writing', 'research', 'data', 'design', 'general'];
+const VALID_CATEGORIES = ['coding', 'writing', 'research', 'data', 'design', 'general', 'bangers', 'aphorisms', 'memes', 'slogans'];
 
 const router = Router();
 
